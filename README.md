@@ -2,10 +2,7 @@
 
 This project implements the three "write a SQL query" tasks from the assessment
 (Q1 task 1, Q2 task 1, Q4 task 1) as real dbt models running against Postgres,
-built from the sample data provided (`seeds/*.csv`). Q3 and the "explain" items
-(Q1.3/1.4, Q2.2, Q4.2–4.4) are discussion-only per the assignment's own
-instructions and aren't modeled here, but the design choices behind the models
-below double as the answers to those questions.
+built from the sample data provided (`seeds/*.csv`).
 
 Tested end-to-end against a live Postgres instance (`dbt seed && dbt run && dbt test`)
 using the `test_demo` profile.
