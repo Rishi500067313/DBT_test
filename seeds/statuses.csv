@@ -1,0 +1,5 @@
+status_id,status_name,status_group_id
+1,Online,1
+2,Busy,1
+3,Away,2
+4,Offline,2

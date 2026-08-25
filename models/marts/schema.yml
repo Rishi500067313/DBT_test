@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: q1_session_grouping
+    description: "Q1 deliverable: events tagged with is_session_start and session_number."
+    columns:
+      - name: id
+        data_tests: [unique, not_null]
+
+  - name: q2_status_group_duration
+    description: "Q2 deliverable: minutes spent per status group, per customer session."
+
+  - name: q4_agent_point_in_time
+    description: "Q4 deliverable: the agent assigned to each customer at the time of each event."
+    columns:
+      - name: id
+        data_tests: [unique, not_null]

@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_events
+    description: "Typed pass-through over the raw events seed."
+    columns:
+      - name: id
+        data_tests: [unique, not_null]
+      - name: customer
+        data_tests: [not_null]
+      - name: dt
+        data_tests: [not_null]
+
+  - name: stg_statuses
+    description: "Typed pass-through over the raw statuses seed."
+    columns:
+      - name: status_id
+        data_tests: [unique, not_null]
+
+  - name: stg_status_groups
+    description: "Typed pass-through over the raw status_groups seed."
+    columns:
+      - name: status_group_id
+        data_tests: [unique, not_null]
+
+  - name: stg_customers
+    description: "Typed pass-through over the raw customers seed. Holds each customer's CURRENT agent only — no history."
+    columns:
+      - name: customer
+        data_tests: [unique, not_null]
+
+  - name: stg_agent_change_log
+    description: "Typed pass-through over the raw agent_change_log seed. Append-only history of agent reassignments."
+    columns:
+      - name: id
+        data_tests: [unique, not_null]

@@ -1,0 +1,100 @@
+
+# Name your project! Project names should contain only lowercase characters
+# and underscores. A good package name should reflect your organization's
+# name or the intended use of these models
+name: 'test_demo'
+version: '1.0.0'
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'test_demo'
+
+# These configurations specify where dbt should look for different types of files.
+# The `model-paths` config, for example, states that models in this project can be
+# found in the "models/" directory. You probably won't need to change these!
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+# Assessment dataset ships as plain text CSVs — pin real types at seed
+# time so staging models don't have to cast timestamps out of varchar.
+seeds:
+  test_demo:
+    events:
+      +column_types:
+        id: integer
+        customer: varchar(100)
+        dt: timestamp
+        status_id: integer
+      # Perf requirement (50M rows / <30s): lets Postgres satisfy
+      # int_events_sessioned's "PARTITION BY customer ORDER BY dt" via an
+      # index scan instead of sorting the whole table from scratch.
+      +post-hook: "{{ create_events_index() }}"
+    agent_change_log:
+      +column_types:
+        id: integer
+        customer: varchar(100)
+        agent_id: varchar(20)
+        changed_at: timestamp
+      +post-hook: "{{ create_agent_change_log_index() }}"
+    customers:
+      +column_types:
+        customer: varchar(100)
+        agent_id: varchar(20)
+    statuses:
+      +column_types:
+        status_id: integer
+        status_name: varchar(100)
+        status_group_id: integer
+    status_groups:
+      +column_types:
+        status_group_id: integer
+        status_group_name: varchar(100)
+
+# session_agg (the custom window aggregate Q1's session model depends on)
+# is DDL, not a model — it has to exist before any model references it.
+# Creating it here, idempotently, on every invocation is simpler and safer
+# than hoping someone runs a one-off migration first.
+#
+# create_events_partitions() is NOT here — it needs stg_events to already
+# exist (it reloads prod.events_partitioned from it), but on-run-start
+# fires before ANY model, including stg_events itself. It runs instead as
+# int_events_partitioned's pre_hook, so dbt's normal DAG ordering handles
+# it correctly. See that model and macros/create_events_partitions.sql.
+on-run-start:
+  - "{{ create_session_agg() }}"
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+# Mirrors the assessment's dwh.stg / dwh.prod convention: staging models
+# land in the `stg` schema, everything derived (intermediate + marts)
+# lands in `prod`. See macros/generate_schema_name.sql — without that
+# override dbt would suffix these onto the target schema instead of
+# using them as the literal schema name.
+models:
+  test_demo:
+    # Config indicated by + and applies to all files under models/example/
+    example:
+      +materialized: view
+    staging:
+      +schema: stg
+      +materialized: view
+    intermediate:
+      +schema: prod
+      +materialized: incremental
+    marts:
+      +schema: prod
+      +materialized: view
+
+vars:
+  # How many days back to reprocess agent_change_log for late-arriving
+  # entries (see int_agent_ranges.sql / Q4.4). Entries later than this
+  # many days after the fact won't be picked up retroactively.
+  agent_ranges_lookback_days: 7

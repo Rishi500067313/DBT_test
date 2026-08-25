@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: int_events_sessioned
+    description: >
+      Q1: events with is_session_start / session_number derived via the
+      custom session_agg window aggregate. Incremental, anchored per
+      customer to their last known session start so reprocessing never
+      lands mid-session.
+    columns:
+      - name: id
+        data_tests: [unique, not_null]
+      - name: is_session_start
+        data_tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: session_number
+        data_tests: [not_null]
+
+  - name: int_agent_ranges
+    description: >
+      Q4.2/Q4.3: agent_change_log collapsed into per-customer
+      [valid_from, valid_to) ranges, so point-in-time agent lookups are
+      a range comparison against a small table instead of a scan/search
+      of the full log. valid_to = NULL means "still the active agent".
+    columns:
+      - name: customer
+        data_tests: [not_null]
+      - name: valid_from
+        data_tests: [not_null]
